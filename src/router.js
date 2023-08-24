@@ -5,9 +5,11 @@ import CoachRegistration from './pages/coaches/CoachRegistration.vue';
 import CoachDetail from './pages/coaches/CoachDetail.vue';
 import ContactCoach from './pages/requests/ContactCoache.vue';
 import RequestsReceived from './pages/requests/RequestsReceived.vue';
-import NotFound from './pages/NotFound.vue';
+//import NotFound from './pages/NotFound.vue';
 import UserAuth from './pages/auth/UserAuth.vue';
 import store from './store/index';
+
+const NotFound = () => import('./pages/NotFound.vue');
 
 const router = createRouter({
     history: createWebHistory(),
