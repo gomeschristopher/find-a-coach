@@ -11,7 +11,7 @@
             <div class="controls">
                 <BaseButton @click="loadCoaches(true)" mode="outline">Refresh</BaseButton>
                 <BaseButton link to="/auth" v-if="!isLoggedIn">Login</BaseButton>
-                <BaseButton v-if="!isCoach && !isLoading && isLoggedIn" link to="/auth?redirect=register">Register as Coach</BaseButton>
+                <BaseButton v-if="!isCoach && !isLoading && isLoggedIn" link to="/register">Register as Coach</BaseButton>
             </div>
             <div v-if="isLoading">
                 <BaseSpinner />
@@ -35,6 +35,9 @@
 </template>
 
 <script>
+import { ref, computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+
 import CoachItem  from '../../components/coaches/CoachItem.vue';
 import CoachFilter from '../../components/coaches/CoachFilter.vue';
 
@@ -43,62 +46,78 @@ export default {
         CoachItem,
         CoachFilter
     },
-    data() {
-        return {
-            isLoading: false,
-            error: null,
-            activeFilters: {
-                frontend: true,
-                backend: true,
-                carreer: true
-            }
-        }
-    },
-    computed: {
-        isLoggedIn() {
-            return this.$store.getters.isAuthenticated;
-        },
-        filteredCoaches() {
-            const coaches = this.$store.getters['coaches/coaches'];
+    setup() {
+        const isLoading = ref(false);
+        const error = ref(null);
+        const activeFilters = ref({
+            frontend: true,
+            backend: true,
+            carreer: true
+        });
+        const store = useStore();
+
+        const isLoggedIn = computed(() => {
+            return store.getters.isAuthenticated;
+        });
+
+        const filteredCoaches = computed(() => {
+            const coaches = store.getters['coaches/coaches'];
             return coaches.filter(coach => {
-                if(this.activeFilters.frontend && coach.areas.includes('frontend')) {
+                if(activeFilters.value.frontend && coach.areas.includes('frontend')) {
                     return true;
                 }
-                if(this.activeFilters.backend && coach.areas.includes('backend')) {
+                if(activeFilters.value.backend && coach.areas.includes('backend')) {
                     return true;
                 }
-                if(this.activeFilters.career && coach.areas.includes('career')) {
+                if(activeFilters.value.career && coach.areas.includes('career')) {
                     return true;
                 }
                 return false;
             });
-        },
-        hasCoaches() {
-            return !this.isLoading && this.$store.getters['coaches/hasCoaches'];
-        },
-        isCoach() {
-            return this.$store.getters['coaches/isCoach'];
-        } 
-    },
-    methods: {
-        setFilters(updatedFilters) {
-            this.activeFilters = updatedFilters;
-        },
-        async loadCoaches(refresh = false) {
-            this.isLoading = true;
+        });
+
+        const hasCoaches = computed(() => {
+            return !isLoading.value && store.getters['coaches/hasCoaches'];
+        });
+
+        const isCoach = computed(() => {
+            return store.getters['coaches/isCoach'];
+        }); 
+
+        const setFilters = updatedFilters => {
+            activeFilters.value = updatedFilters;
+        };
+
+        const loadCoaches = async (refresh = false) => {
+            isLoading.value = true;
             try {
-                await this.$store.dispatch('coaches/loadCoaches', { forceRefresh: refresh });
-            } catch (error) {
-                this.error = error.message || 'Something went wrong';
+                await store.dispatch('coaches/loadCoaches', { forceRefresh: refresh });
+            } catch (err) {
+                error.value = err.message || 'Something went wrong';
             }
-            this.isLoading = false;
-        },
-        handleError() {
-            this.error = null;
+            isLoading.value = false;
+        };
+
+        const handleError = async () => {
+            this.error.value = null;
         }
-    },
-    created() {
-        this.loadCoaches();
+
+        onMounted(() => {
+            loadCoaches();
+        })
+
+        return {
+            isLoading,
+            error, 
+            activeFilters,
+            isLoggedIn,
+            filteredCoaches,
+            hasCoaches,
+            isCoach,
+            setFilters,
+            loadCoaches,
+            handleError
+        }
     }
 }
 </script>
